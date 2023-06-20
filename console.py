@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """ Console Module """
 import cmd
+import shlex
 import sys
 from models.base_model import BaseModel
 from models.__init__ import storage
@@ -11,6 +12,11 @@ from models.city import City
 from models.amenity import Amenity
 from models.review import Review
 
+classes = {
+               'BaseModel': BaseModel, 'User': User, 'Place': Place,
+               'State': State, 'City': City, 'Amenity': Amenity,
+               'Review': Review
+              }
 
 class HBNBCommand(cmd.Cmd):
     """ Contains the functionality for the HBNB console"""
@@ -319,6 +325,53 @@ class HBNBCommand(cmd.Cmd):
         """ Help information for the update class """
         print("Updates an object with new information")
         print("Usage: update <className> <id> <attName> <attVal>\n")
+    def do_create(self, arg):
+        """ Allows object creation """
+        args = arg.split()
+
+        if len(args) == 0:
+            print(" ** class is missing **")
+            return
+
+        c_args = []
+        for i in args:
+            initial = i.find("=")
+            i = i[0: initial] + i[initial:].replace('_', ' ')
+            c_args.append(i)
+
+        if c_args[0] in classes:
+            new_inst = classes[c_args[0]]()
+            new_dic =  {}
+            for x in c_args:
+                if x != c_args[0]:
+                    new_list = x.split("=")
+                    new_dic[new_list[0]] = new_list[1]
+
+            for k, v in new_dic.items():
+                if v[0] == '"':
+                    v_list = shlex.split(v)
+                    setattr(new_inst, k, new_dic[k])
+                else:
+                    try:
+                        if type(eval(v)).__name__ == 'int':
+                            v = eval(v)
+                    except:
+                        continue
+                    try:
+                        if type(eval(str(v))).__name__ == 'float':
+                            v = eval(v)
+                    except:
+                        continue
+                    try:
+                        if type(eval(str(v))).__name__ == 'float':
+                            v = eval(v)
+                    except:
+                        continue
+                    setattr(new_inst, k, v)
+            new_inst.save()
+            print(new_inst.id)
+        else:
+            print("** class doesn't exist **")
 
 if __name__ == "__main__":
     HBNBCommand().cmdloop()
